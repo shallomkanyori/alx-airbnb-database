@@ -3,7 +3,8 @@ SELECT *
   FROM bookings AS b
   INNER JOIN users AS u ON b.user_id = u.user_id
   INNER JOIN properties AS p ON b.property_id = p.property_id
-  INNER JOIN payments AS pay ON b.booking_id = pay.booking_id;
+  INNER JOIN payments AS pay ON b.booking_id = pay.booking_id
+  WHERE b.start_date >= '2024-01-01' AND b.end_date <= '2024-12-31';
 
 -- Analyze the performance of the query
 EXPLAIN ANALYZE SELECT *
@@ -25,7 +26,8 @@ SELECT
 FROM bookings AS b
 INNER JOIN users AS u ON b.user_id = u.user_id
 INNER JOIN properties AS p ON b.property_id = p.property_id
-INNER JOIN payments AS pay ON b.booking_id = pay.booking_id;
+INNER JOIN payments AS pay ON b.booking_id = pay.booking_id
+WHERE b.start_date >= '2024-01-01' AND b.end_date <= '2024-12-31';
 
 -- Analyze the performance of the query
 EXPLAIN ANALYZE SELECT 
@@ -36,4 +38,5 @@ EXPLAIN ANALYZE SELECT
 FROM bookings AS b
 INNER JOIN users AS u ON b.user_id = u.user_id
 INNER JOIN properties AS p ON b.property_id = p.property_id
-INNER JOIN payments AS pay ON b.booking_id = pay.booking_id;
+INNER JOIN payments AS pay ON b.booking_id = pay.booking_id
+WHERE b.start_date >= '2024-01-01' AND b.end_date <= '2024-12-31';

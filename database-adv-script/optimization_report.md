@@ -7,7 +7,8 @@ SELECT *
   FROM bookings AS b
   INNER JOIN users AS u ON b.user_id = u.user_id
   INNER JOIN properties AS p ON b.property_id = p.property_id
-  INNER JOIN payments AS pay ON b.booking_id = pay.booking_id;
+  INNER JOIN payments AS pay ON b.booking_id = pay.booking_id
+  WHERE b.start_date >= '2024-01-01' AND b.end_date <= '2024-12-31';
 ```
 
 - Analyze the query’s performance using EXPLAIN and identify any inefficiencies.
@@ -17,23 +18,22 @@ EXPLAIN ANALYZE SELECT *
                   FROM bookings AS b
                  INNER JOIN users AS u ON b.user_id = u.user_id
                  INNER JOIN properties AS p ON b.property_id = p.property_id
-                 INNER JOIN payments AS pay ON b.booking_id = pay.booking_id;
+                 INNER JOIN payments AS pay ON b.booking_id = pay.booking_id
+                 WHERE b.start_date >= '2024-01-01' AND b.end_date <= '2024-12-31';
 ```
 Output:
 ```
 +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | EXPLAIN                                                                                                                                                                                                                          |
 +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| -> Nested loop inner join  (cost=2.18 rows=1) (actual time=0.068..0.102 rows=2 loops=1)
-    -> Nested loop inner join  (cost=2.00 rows=1) (actual time=0.060..0.087 rows=2 loops=1)
-        -> Inner hash join (no condition)  (cost=1.10 rows=4) (actual time=0.037..0.044 rows=4 loops=1)
-            -> Table scan on p  (cost=0.23 rows=2) (actual time=0.005..0.008 rows=2 loops=1)
-            -> Hash
-                -> Filter: (pay.booking_id is not null)  (cost=0.45 rows=2) (actual time=0.017..0.022 rows=2 loops=1)
-                    -> Table scan on pay  (cost=0.45 rows=2) (actual time=0.009..0.011 rows=2 loops=1)
-        -> Filter: ((b.property_id = p.property_id) and (b.user_id is not null))  (cost=0.13 rows=0) (actual time=0.007..0.008 rows=0 loops=4)
-            -> Single-row index lookup on b using PRIMARY (booking_id=pay.booking_id)  (cost=0.13 rows=1) (actual time=0.004..0.004 rows=1 loops=4)
-    -> Single-row index lookup on u using PRIMARY (user_id=b.user_id)  (cost=0.25 rows=1) (actual time=0.003..0.003 rows=1 loops=2)
+| -> Nested loop inner join  (cost=1.43 rows=0) (actual time=0.106..0.120 rows=1 loops=1)
+    -> Nested loop inner join  (cost=1.29 rows=0) (actual time=0.094..0.105 rows=1 loops=1)
+        -> Nested loop inner join  (cost=1.15 rows=0) (actual time=0.063..0.078 rows=3 loops=1)
+            -> Table scan on p  (cost=0.45 rows=2) (actual time=0.012..0.016 rows=2 loops=1)
+            -> Filter: ((b.start_date >= DATE'2024-01-01') and (b.end_date <= DATE'2024-12-31') and (b.user_id is not null))  (cost=0.26 rows=0) (actual time=0.020..0.024 rows=2 loops=2)
+                -> Index lookup on b using property_id_index (property_id=p.property_id)  (cost=0.26 rows=1) (actual time=0.013..0.017 rows=2 loops=2)
+        -> Index lookup on pay using booking_id_index (booking_id=b.booking_id)  (cost=0.50 rows=1) (actual time=0.004..0.005 rows=0 loops=3)
+    -> Single-row index lookup on u using PRIMARY (user_id=b.user_id)  (cost=0.50 rows=1) (actual time=0.007..0.007 rows=1 loops=1)
  |
 +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 ```
@@ -53,7 +53,8 @@ SELECT
 FROM bookings AS b
 INNER JOIN users AS u ON b.user_id = u.user_id
 INNER JOIN properties AS p ON b.property_id = p.property_id
-INNER JOIN payments AS pay ON b.booking_id = pay.booking_id;
+INNER JOIN payments AS pay ON b.booking_id = pay.booking_id
+WHERE b.start_date >= '2024-01-01' AND b.end_date <= '2024-12-31';
 ```
 
 - Optimization result
@@ -61,15 +62,15 @@ INNER JOIN payments AS pay ON b.booking_id = pay.booking_id;
 +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | EXPLAIN                                                                                                                                                                                                                          |
 +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| -> Nested loop inner join  (cost=1.40 rows=1) (actual time=0.043..0.120 rows=2 loops=1)
-    -> Nested loop inner join  (cost=1.05 rows=1) (actual time=0.035..0.105 rows=2 loops=1)
-        -> Nested loop inner join  (cost=0.70 rows=1) (actual time=0.027..0.088 rows=2 loops=1)
-            -> Filter: (pay.booking_id is not null)  (cost=0.35 rows=1) (actual time=0.010..0.015 rows=2 loops=1)
-                -> Table scan on pay  (cost=0.35 rows=1) (actual time=0.007..0.010 rows=2 loops=1)
-            -> Filter: ((b.property_id is not null) and (b.user_id is not null))  (cost=0.35 rows=1) (actual time=0.009..0.011 rows=1 loops=2)
-                -> Single-row index lookup on b using PRIMARY (booking_id=pay.booking_id)  (cost=0.35 rows=1) (actual time=0.007..0.007 rows=1 loops=2)
-        -> Single-row index lookup on p using PRIMARY (property_id=b.property_id)  (cost=0.35 rows=1) (actual time=0.004..0.005 rows=1 loops=2)
-    -> Single-row index lookup on u using PRIMARY (user_id=b.user_id)  (cost=0.35 rows=1) (actual time=0.003..0.004 rows=1 loops=2)
+| -> Nested loop inner join  (cost=0.84 rows=0) (actual time=0.089..0.103 rows=1 loops=1)
+    -> Nested loop inner join  (cost=0.77 rows=0) (actual time=0.071..0.082 rows=1 loops=1)
+        -> Nested loop inner join  (cost=0.70 rows=0) (actual time=0.058..0.066 rows=1 loops=1)
+            -> Filter: (pay.booking_id is not null)  (cost=0.35 rows=1) (actual time=0.016..0.024 rows=2 loops=1)
+                -> Table scan on pay  (cost=0.35 rows=1) (actual time=0.012..0.017 rows=2 loops=1)
+            -> Filter: ((b.start_date >= DATE'2024-01-01') and (b.end_date <= DATE'2024-12-31') and (b.property_id is not null) and (b.user_id is not null))  (cost=0.27 rows=0) (actual time=0.015..0.016 rows=0 loops=2)
+                -> Single-row index lookup on b using PRIMARY (booking_id=pay.booking_id)  (cost=0.27 rows=1) (actual time=0.010..0.010 rows=1 loops=2)
+        -> Single-row index lookup on p using PRIMARY (property_id=b.property_id)  (cost=0.75 rows=1) (actual time=0.008..0.009 rows=1 loops=1)
+    -> Single-row index lookup on u using PRIMARY (user_id=b.user_id)  (cost=0.75 rows=1) (actual time=0.007..0.008 rows=1 loops=1)
  |
 +--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 ```
